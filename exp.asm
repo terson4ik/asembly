@@ -1,17 +1,24 @@
 %include 'stud_io.inc'
 global _start
-;%define HUY
+%define HUY
 ;%define ZALUPA
 ;%define O4KO
 
 %macro jump 1-*
-    %assign i 1
-    %rep %0
-        cmp eax, i
-        jz %1
-        %rotate 1
-        %assign i i+1
-    %endrep
+        cmp eax, 0
+        jbe %%end
+        cmp eax, %0
+        ja %%end
+        jmp %%skip
+%%table:
+        %rep %0
+            dd  %1  ; eip=4b
+            %rotate 1
+        %endrep
+%%skip: 
+        dec eax
+        jmp [%%table+4*eax]
+%%end:
 %endmacro
 
 section .text
