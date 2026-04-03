@@ -1,28 +1,25 @@
 %include 'stud_io.inc'
 global _start
 
-%macro init 3
-; first parameter is init value
-; second parameter is step
-; third parameter is count
-    %assign val %1
+%macro createArr 3 ; init value, step, count
+    %assign val %1 
     %rep %3
-        dd val     ; double word
+        dd val
         %assign val val+%2
     %endrep
 %endmacro
 
 section .data
-array   init '0', 1, 10
+count   equ 10
+arr     createArr '9', -1, count
 
 section .text
-_start: mov ecx, 10
-        mov ebx, array
-loop:   mov eax, [ebx]
-        add ebx, 4
-        dec ecx
+_start: 
+        mov ecx, count
+        mov ebx, arr
+lp:     mov eax, [ebx]
         PUTCHAR al
+        add ebx,4
+        loop lp
         PUTCHAR 10
-        test ecx, ecx
-        jnz loop
         FINISH
