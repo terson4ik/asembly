@@ -1,0 +1,9 @@
+nasm -g -f elf check_oct.asm 
+nasm -g -f elf main.asm 
+nasm -g -f elf read_arr.asm
+nasm -g -f elf write_arr.asm
+nasm -g -f elf print.asm
+nasm -g -f elf operations.asm
+
+ld -m elf_i386 check_oct.o  read_arr.o write_arr.o print.o operations.o main.o -o main
+./main $1 $2
