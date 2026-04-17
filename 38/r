@@ -1,0 +1,11 @@
+#!/bin/zsh
+nasm -f elf -g prog.asm
+nasm -f elf -g quit.asm
+nasm -f elf -g check_numeric.asm
+nasm -f elf -g validate.asm
+nasm -f elf -g convert.asm
+nasm -f elf -g print.asm
+
+ld -m elf_i386  check_numeric.o print.o convert.o validate.o  quit.o prog.o -o prog
+rm *o 
+./prog 2 A 110011
