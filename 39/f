@@ -1,0 +1,6 @@
+#!/bin/bash
+nasm -f elf -g main.asm
+
+ld -m elf_i386 main.o -o prog
+rm *.o *~ .*~ 2> /dev/null
+./prog 1.txt
