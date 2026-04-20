@@ -1,0 +1,648 @@
+terson@testosteron ~/a/42 (git)-[main] % l
+total 0
+-rw-r--r-- 1 terson terson 0 Apr 20 11:55 f
+-rw-r--r-- 1 terson terson 0 Apr 20 11:55 main.asm
+terson@testosteron ~/a/42 (git)-[main] % script .a
+Script started, output log file is '.a'.
+terson@testosteron ~/a/42 (git)-[main] % м а
+zsh: command not found: м
+127 terson@testosteron ~/a/42 (git)-[main] % v f
+terson@testosteron ~/a/42 (git)-[main] % chmod +x f
+terson@testosteron ~/a/42 (git)-[main] % cat f
+#!/bin/bash
+nasm -f elf -g main.asm
+
+ld -m elf_i386 main.o -o prog
+rm -f *.o
+./prog
+terson@testosteron ~/a/42 (git)-[main] % l
+total 4
+-rwxr-xr-x 1 terson terson 84 Apr 20 14:50 f
+-rw-r--r-- 1 terson terson  0 Apr 20 11:55 main.asm
+terson@testosteron ~/a/42 (git)-[main] % v main.asm
+terson@testosteron ~/a/42 (git)-[main] % cat main.asm
+global _start
+
+section .data
+f_name   db  'result.dat', 0
+f_n_len  equ $-f_name
+
+section .bss
+max_len     resd    1
+total_len   resd    1
+total_str   resd    1
+fd          resd    1
+
+section .text
+_start: mov eax, 5          ; open
+        mov ebx, f_name     ; dest file
+        mov ecx, 241h       ; O_WRONLY, O_CREAT, O_TRUNC
+        mov edx, 0666o      ; permissions
+        int 80h
+        cmp eax, 0
+        jnl .file_open_ok
+        mov eax, 1
+        mov ebx, 1
+        int 80h
+.file_open_ok:
+        mov [fd], eax
+
+        mov eax, 6          ; close
+        mov ebx, [fd]       ; file descriptor
+        int 80h
+
+        mov eax, 1
+        xor ebx, ebx
+        int 80h
+terson@testosteron ~/a/42 (git)-[main] % ./f
+terson@testosteron ~/a/42 (git)-[main] % l
+total 20
+-rwxr-xr-x 1 terson terson   84 Apr 20 14:50 f
+-rw-r--r-- 1 terson terson  687 Apr 20 14:57 main.asm
+-rwxr-xr-x 1 terson terson 9268 Apr 20 14:57 prog
+-rw-r--r-- 1 terson terson    0 Apr 20 14:57 result.dat
+terson@testosteron ~/a/42 (git)-[main] % v main.asm
+terson@testosteron ~/a/42 (git)-[main] % ./f
+123
+
+^C
+./f  10.93s user 0.01s system 99% cpu 10.970 total
+130 terson@testosteron ~/a/42 (git)-[main] % l
+total 20
+-rwxr-xr-x 1 terson terson   84 Apr 20 14:50 f
+-rw-r--r-- 1 terson terson 1820 Apr 20 15:32 main.asm
+-rwxr-xr-x 1 terson terson 9528 Apr 20 15:32 prog
+-rw-r--r-- 1 terson terson    0 Apr 20 15:32 result.dat
+terson@testosteron ~/a/42 (git)-[main] % cat main.asm
+global _start
+
+section .data
+f_name   db  'result.dat', 0
+f_n_len  equ $-f_name
+
+section .bss
+total_str   resd    1
+total_len   resd    1
+max_len     resd    1
+fd          resd    1
+buffer      resb    4096
+buf_size    equ     $-buffer
+
+section .text
+_start: mov eax, 5          ; open
+        mov ebx, f_name     ; dest file
+        mov ecx, 241h       ; O_WRONLY, O_CREAT, O_TRUNC
+        mov edx, 0666o      ; permissions
+        int 80h
+        cmp eax, 0
+        jnl .file_open_ok
+        mov eax, 1
+        mov ebx, 1
+        int 80h
+.file_open_ok:
+        mov [fd], eax
+        mov [total_str], 0
+        mov [total_len], 0
+        mov [max_len], 0
+        xor esi, esi        ; save current value from str
+        xor edi, edi        ; save MAX length
+.loop:  mov eax, 3          ; read
+        mov ebx, 0          ; stdin
+        mov ecx, buffer
+        mov edx, buf_size
+        cmp eax, 0
+        jle .EOF
+        mov ecx, eax
+        xor eax, eax
+.lp:    mov dl, [eax+buffer]
+        cmp dl, 10
+        jne .no_nl
+        inc dword [total_str]
+        add [total_len], esi
+        cmp esi, edi
+        jb .below
+        xchg edi, esi
+.below: xor esi, esi
+        jmp short .next_el
+.no_nl: inc esi
+.next_el:
+        inc eax
+        cmp eax, ecx
+        je .loop
+        jmp .lp
+.EOF:   mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_str
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, max_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 6          ; close
+        mov ebx, [fd]       ; file descriptor
+        int 80h
+
+        mov eax, 1
+        xor ebx, ebx
+        int 80h
+terson@testosteron ~/a/42 (git)-[main] % jobs
+terson@testosteron ~/a/42 (git)-[main] % l
+total 20
+-rwxr-xr-x 1 terson terson   84 Apr 20 14:50 f
+-rw-r--r-- 1 terson terson 1820 Apr 20 15:32 main.asm
+-rwxr-xr-x 1 terson terson 9528 Apr 20 15:32 prog
+-rw-r--r-- 1 terson terson    0 Apr 20 15:32 result.dat
+terson@testosteron ~/a/42 (git)-[main] % v main.asm
+terson@testosteron ~/a/42 (git)-[main] % cat > 1
+1
+terson@testosteron ~/a/42 (git)-[main] % cat 1
+1
+terson@testosteron ~/a/42 (git)-[main] % ./prog < 1
+
+^C
+130 terson@testosteron ~/a/42 (git)-[main] % l
+total 24
+-rw-r--r-- 1 terson terson    2 Apr 20 15:34 1
+-rwxr-xr-x 1 terson terson   84 Apr 20 14:50 f
+-rw-r--r-- 1 terson terson 1820 Apr 20 15:32 main.asm
+-rwxr-xr-x 1 terson terson 9528 Apr 20 15:32 prog
+-rw-r--r-- 1 terson terson    0 Apr 20 15:34 result.dat
+terson@testosteron ~/a/42 (git)-[main] % gdb ./prog
+GNU gdb (GDB) 17.1
+Copyright (C) 2025 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-pc-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from ./prog...
+(gdb) layout asm
+terson@testosteron ~/a/42 (git)-[main] % cat main.asm
+global _start
+
+section .data
+f_name   db  'result.dat', 0
+f_n_len  equ $-f_name
+
+section .bss
+total_str   resd    1
+total_len   resd    1
+max_len     resd    1
+fd          resd    1
+buffer      resb    4096
+buf_size    equ     $-buffer
+
+section .text
+_start: mov eax, 5          ; open
+        mov ebx, f_name     ; dest file
+        mov ecx, 241h       ; O_WRONLY, O_CREAT, O_TRUNC
+        mov edx, 0666o      ; permissions
+        int 80h
+        cmp eax, 0
+        jnl .file_open_ok
+        mov eax, 1
+        mov ebx, 1
+        int 80h
+.file_open_ok:
+        mov [fd], eax
+        mov [total_str], 0
+        mov [total_len], 0
+        mov [max_len], 0
+        xor esi, esi        ; save current value from str
+        xor edi, edi        ; save MAX length
+.loop:  mov eax, 3          ; read
+        mov ebx, 0          ; stdin
+        mov ecx, buffer
+        mov edx, buf_size
+        cmp eax, 0
+        jle .EOF
+        mov ecx, eax
+        xor eax, eax
+.lp:    mov dl, [eax+buffer]
+        cmp dl, 10
+        jne .no_nl
+        inc dword [total_str]
+        add [total_len], esi
+        cmp esi, edi
+        jb .below
+        xchg edi, esi
+.below: xor esi, esi
+        jmp short .next_el
+.no_nl: inc esi
+.next_el:
+        inc eax
+        cmp eax, ecx
+        je .loop
+        jmp .lp
+.EOF:   mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_str
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, max_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 6          ; close
+        mov ebx, [fd]       ; file descriptor
+        int 80h
+
+        mov eax, 1
+        xor ebx, ebx
+        int 80h
+terson@testosteron ~/a/42 (git)-[main] % v main.asm
+terson@testosteron ~/a/42 (git)-[main] % ./f
+1234
+terson@testosteron ~/a/42 (git)-[main] % l
+total 28
+-rw-r--r-- 1 terson terson    2 Apr 20 15:34 1
+-rwxr-xr-x 1 terson terson   84 Apr 20 14:50 f
+-rw-r--r-- 1 terson terson 1836 Apr 20 15:36 main.asm
+-rwxr-xr-x 1 terson terson 9528 Apr 20 15:36 prog
+-rw-r--r-- 1 terson terson   12 Apr 20 15:36 result.dat
+terson@testosteron ~/a/42 (git)-[main] % hexdump --canonical result.dat
+00000000  01 00 00 00 04 00 00 00  00 00 00 00              |............|
+0000000c
+terson@testosteron ~/a/42 (git)-[main] % cat main.asm
+global _start
+
+section .data
+f_name   db  'result.dat', 0
+f_n_len  equ $-f_name
+
+section .bss
+total_str   resd    1
+total_len   resd    1
+max_len     resd    1
+fd          resd    1
+buffer      resb    4096
+buf_size    equ     $-buffer
+
+section .text
+_start: mov eax, 5          ; open
+        mov ebx, f_name     ; dest file
+        mov ecx, 241h       ; O_WRONLY, O_CREAT, O_TRUNC
+        mov edx, 0666o      ; permissions
+        int 80h
+        cmp eax, 0
+        jnl .file_open_ok
+        mov eax, 1
+        mov ebx, 1
+        int 80h
+.file_open_ok:
+        mov [fd], eax
+        mov [total_str], 0
+        mov [total_len], 0
+        mov [max_len], 0
+        xor esi, esi        ; save current value from str
+        xor edi, edi        ; save MAX length
+.loop:  mov eax, 3          ; read
+        mov ebx, 0          ; stdin
+        mov ecx, buffer
+        mov edx, buf_size
+        int 80h
+        cmp eax, 0
+        jle .EOF
+        mov ecx, eax
+        xor eax, eax
+.lp:    mov dl, [eax+buffer]
+        cmp dl, 10
+        jne .no_nl
+        inc dword [total_str]
+        add [total_len], esi
+        cmp esi, edi
+        jb .below
+        xchg edi, esi
+.below: xor esi, esi
+        jmp short .next_el
+.no_nl: inc esi
+.next_el:
+        inc eax
+        cmp eax, ecx
+        je .loop
+        jmp .lp
+.EOF:   mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_str
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, max_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 6          ; close
+        mov ebx, [fd]       ; file descriptor
+        int 80h
+
+        mov eax, 1
+        xor ebx, ebx
+        int 80h
+terson@testosteron ~/a/42 (git)-[main] % v main.asm
+terson@testosteron ~/a/42 (git)-[main] % l
+total 28
+-rw-r--r-- 1 terson terson    2 Apr 20 15:34 1
+-rwxr-xr-x 1 terson terson   84 Apr 20 14:50 f
+-rw-r--r-- 1 terson terson 1865 Apr 20 15:38 main.asm
+-rwxr-xr-x 1 terson terson 9528 Apr 20 15:36 prog
+-rw-r--r-- 1 terson terson   12 Apr 20 15:36 result.dat
+terson@testosteron ~/a/42 (git)-[main] % cat 1
+1
+terson@testosteron ~/a/42 (git)-[main] % echo '1234' > 1
+terson@testosteron ~/a/42 (git)-[main] % ./f
+^C
+130 terson@testosteron ~/a/42 (git)-[main] % ./prog < 1
+terson@testosteron ~/a/42 (git)-[main] % hexdump result.dat
+0000000 0001 0000 0004 0000 0000 0000
+000000c
+terson@testosteron ~/a/42 (git)-[main] % cat main.asm
+global _start
+
+section .data
+f_name   db  'result.dat', 0
+f_n_len  equ $-f_name
+
+section .bss
+total_str   resd    1
+total_len   resd    1
+max_len     resd    1
+fd          resd    1
+buffer      resb    4096
+buf_size    equ     $-buffer
+
+section .text
+_start: mov eax, 5          ; open
+        mov ebx, f_name     ; dest file
+        mov ecx, 241h       ; O_WRONLY, O_CREAT, O_TRUNC
+        mov edx, 0666o      ; permissions
+        int 80h
+        cmp eax, 0
+        jnl .file_open_ok
+        mov eax, 1
+        mov ebx, 1
+        int 80h
+.file_open_ok:
+        mov [fd], eax
+        mov [total_str], 0
+        mov [total_len], 0
+        mov [max_len], 0
+        xor esi, esi        ; save current value from str
+        xor edi, edi        ; save MAX length
+.loop:  mov eax, 3          ; read
+        mov ebx, 0          ; stdin
+        mov ecx, buffer
+        mov edx, buf_size
+        int 80h
+        cmp eax, 0
+        jle .EOF
+        mov ecx, eax
+        xor eax, eax
+.lp:    mov dl, [eax+buffer]
+        cmp dl, 10
+        jne .no_nl
+        inc dword [total_str]
+        add [total_len], esi
+        cmp esi, edi
+        jb .below
+        xchg edi, esi
+.below: xor esi, esi
+        jmp short .next_el
+.no_nl: inc esi
+.next_el:
+        inc eax
+        cmp eax, ecx
+        je .loop
+        jmp .lp
+.EOF:   mov [total_len], edi
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_str
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, max_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 6          ; close
+        mov ebx, [fd]       ; file descriptor
+        int 80h
+
+        mov eax, 1
+        xor ebx, ebx
+        int 80h
+terson@testosteron ~/a/42 (git)-[main] % v main.asm
+terson@testosteron ~/a/42 (git)-[main] % v f
+terson@testosteron ~/a/42 (git)-[main] % cat f
+#!/bin/bash
+nasm -f elf -g main.asm
+
+ld -m elf_i386 main.o -o prog
+rm -f *.o
+./prog < 1
+
+hexdump result.dat
+terson@testosteron ~/a/42 (git)-[main] % cat main.asm
+global _start
+
+section .data
+f_name   db  'result.dat', 0
+f_n_len  equ $-f_name
+
+section .bss
+total_str   resd    1
+total_len   resd    1
+max_len     resd    1
+fd          resd    1
+buffer      resb    4096
+buf_size    equ     $-buffer
+
+section .text
+_start: mov eax, 5          ; open
+        mov ebx, f_name     ; dest file
+        mov ecx, 241h       ; O_WRONLY, O_CREAT, O_TRUNC
+        mov edx, 0666o      ; permissions
+        int 80h
+        cmp eax, 0
+        jnl .file_open_ok
+        mov eax, 1
+        mov ebx, 1
+        int 80h
+.file_open_ok:
+        mov [fd], eax
+        mov [total_str], 0
+        mov [total_len], 0
+        mov [max_len], 0
+        xor esi, esi        ; save current value from str
+        xor edi, edi        ; save MAX length
+.loop:  mov eax, 3          ; read
+        mov ebx, 0          ; stdin
+        mov ecx, buffer
+        mov edx, buf_size
+        int 80h
+        cmp eax, 0
+        jle .EOF
+        mov ecx, eax
+        xor eax, eax
+.lp:    mov dl, [eax+buffer]
+        cmp dl, 10
+        jne .no_nl
+        inc dword [total_str]
+        add [total_len], esi
+        cmp esi, edi
+        jb .below
+        xchg edi, esi
+.below: xor esi, esi
+        jmp short .next_el
+.no_nl: inc esi
+.next_el:
+        inc eax
+        cmp eax, ecx
+        je .loop
+        jmp .lp
+.EOF:   mov [max_len], edi
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_str
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, total_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 4
+        mov ebx, [fd]
+        mov ecx, max_len
+        mov edx, 4          ; dword
+        int 80h
+
+        mov eax, 6          ; close
+        mov ebx, [fd]       ; file descriptor
+        int 80h
+
+        mov eax, 1
+        xor ebx, ebx
+        int 80h
+terson@testosteron ~/a/42 (git)-[main] % ./f
+0000000 0001 0000 0004 0000 0004 0000
+000000c
+terson@testosteron ~/a/42 (git)-[main] % ./prog
+12345
+67890-=
+terson@testosteron ~/a/42 (git)-[main] % hexdump result.dat
+0000000 0002 0000 000c 0000 0007 0000
+000000c
+terson@testosteron ~/a/42 (git)-[main] % echo ':)'
+:)
+terson@testosteron ~/a/42 (git)-[main] %
+Script done.
+script .a  17.80s user 2.45s system 0% cpu 52:04.89 total
+terson@testosteron ~/a/42 (git)-[main] % geany .a
+terson@testosteron ~/a/42 (git)-[main] % Thunar .
+
+(Thunar:51469): thunar-WARNING **: 15:42:48.148: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(Thunar:51469): thunar-WARNING **: 15:42:48.260: Thumbnailer Proxy Failed ... starting attempt to re-initialize
+
+(Thunar:51469): thunar-WARNING **: 15:42:49.161: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(Thunar:51469): thunar-WARNING **: 15:42:50.072: Thumbnailer Proxy Failed ... starting attempt to re-initialize
+
+(Thunar:51469): thunar-WARNING **: 15:42:51.160: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(Thunar:51469): thunar-WARNING **: 15:42:58.653: Thumbnailer Proxy Failed ... starting attempt to re-initialize
+
+(Thunar:51469): thunar-WARNING **: 15:42:58.778: Thumbnailer Proxy Failed ... starting attempt to re-initialize
+
+(Thunar:51469): thunar-WARNING **: 15:42:58.801: ThunarThumbnailCache: failed to call Move(): GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(Thunar:51469): thunar-WARNING **: 15:42:58.903: Thumbnailer Proxy Failed ... starting attempt to re-initialize
+
+(Thunar:51469): thunar-WARNING **: 15:42:59.028: Thumbnailer Proxy Failed ... starting attempt to re-initialize
+
+(Thunar:51469): thunar-WARNING **: 15:43:00.161: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(Thunar:51469): thunar-WARNING **: 15:43:00.161: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(Thunar:51469): thunar-WARNING **: 15:43:00.161: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(Thunar:51469): thunar-WARNING **: 15:43:00.161: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+^C
+130 terson@testosteron ~/a/42 (git)-[main] % Thunar .
+
+(Thunar:54196): thunar-WARNING **: 15:58:33.416: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+
+(Thunar:54196): thunar-WARNING **: 15:58:33.528: Thumbnailer Proxy Failed ... starting attempt to re-initialize
+
+(Thunar:54196): thunar-WARNING **: 15:58:35.161: ThunarThumbnailer: Failed to retrieve supported types: GDBus.Error:org.freedesktop.DBus.Error.ServiceUnknown: The name is not activatable
+terson@testosteron ~/a/42 (git)-[main] % fastfetch
+                  -`                     terson@testosteron
+                 .o+`                    ------------------
+                `ooo/                    OS: Arch Linux x86_64
+               `+oooo:                   Kernel: Linux 6.19.11-arch1-1
+              `+oooooo:                  Uptime: 8 hours
+              -+oooooo+:                 Packages: 754 (pacman)
+            `/:-:++oooo+:                Shell: zsh 5.9
+           `/++++/+++++++:               Display (P27FBA-RAGL): 1920x1080 @ 1.5x in 27", 100 Hz [Ext]
+          `/++++++++++++++:              WM: dwm (X11)
+         `/+++ooooooooooooo/`            Cursor: Adwaita (24px)
+        ./ooosssso++osssssso+`           Terminal: alacritty 0.17.0
+       .oossssso-````/ossssss+`          Terminal Font: monospace (16pt, Regular)
+      -osssssso.      :ssssssso.         CPU: AMD Ryzen 5 3400G (8) @ 3.70 GHz
+     :osssssss/        osssso+++.        GPU: AMD Radeon Vega 11 Graphics [Integrated]
+    /ossssssss/        +ssssooo/-        Memory: 4.44 GiB / 13.58 GiB (33%)
+  `/ossssso+/:-        -:/+osssso+-      Swap: Disabled
+ `+sso+:-`                 `.-/+oso:     Disk (/): 16.53 GiB / 92.46 GiB (18%) - ext4
+`++:.                           `-/+/    Disk (/home/terson/d): 29.36 GiB / 93.38 GiB (31%) - ext4
+.`                                 `/    Local IP (enp5s0): 192.168.31.162/24
+                                         Locale: en_US.UTF-8
+
+
+
+terson@testosteron ~/a/42 (git)-[main] %
