@@ -1,0 +1,7 @@
+nasm -f elf -g main.asm
+nasm -f elf -g str_to_num.asm
+nasm -f elf -g copy_bytes.asm
+
+ld -m elf_i386 str_to_num.o copy_bytes.o main.o -o prog
+rm -f *.o
+./prog 1 2 1234

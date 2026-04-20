@@ -1,8 +1,0 @@
-#!/bin/bash
-nasm -f elf -g main.asm
-nasm -f elf -g put_arr.asm
-nasm -f elf -g print_N.asm
-
-ld -m elf_i386  print_N.o put_arr.o  main.o -o prog
-rm -f *.o *~ .*~
-./prog 1.txt 9
