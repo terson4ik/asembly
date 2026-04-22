@@ -1,8 +1,5 @@
-#!/bin/bash
 nasm -f elf -g main.asm
 
 ld -m elf_i386 main.o -o prog
 rm -f *.o
-./prog < 1
-
-hexdump result.dat
+./prog 33333

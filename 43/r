@@ -1,0 +1,6 @@
+nasm -f elf -g bonus.asm
+nasm -f elf -g read_STD.asm
+
+ld -m elf_i386 read_STD.o bonus.o -o prog
+rm -f *.o
+./prog 33333
