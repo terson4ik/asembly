@@ -1,0 +1,4 @@
+#!/bin/bash
+for element in *.asm; do
+    nasm -f elf -g "$element"
+done

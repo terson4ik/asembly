@@ -1,0 +1,7 @@
+#!/bin/bash
+nasm -f elf -g main.asm
+nasm -f elf -g poliz.asm
+
+ld -m elf_i386 main.o poliz.o -l stdiokq -L ./ -o prog
+rm -f *.o
+./prog

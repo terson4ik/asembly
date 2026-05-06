@@ -1,5 +1,0 @@
-nasm -f elf -g main.asm
-
-ld -m elf_i386 main.o -o prog
-rm -f *.o
-./prog 33333

@@ -1,6 +1,0 @@
-#!/bin/bash
-nasm -f elf main.asm
-
-ld -m elf_i386 main.o -o prog
-#rm -f *.o
-./prog 1 2
